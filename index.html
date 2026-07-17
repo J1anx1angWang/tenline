@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#101923">
+  <meta name="description" content="一款离线优先的像素合十数字解谜游戏。">
+  <title>十号线 · TENLINE</title>
+  <link rel="stylesheet" href="./styles.css">
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png">
+</head>
+<body>
+  <main class="app">
+    <section id="menu-view" class="view menu-panel" aria-labelledby="game-title">
+      <div class="brand-mark" aria-hidden="true"><span>1</span><span>0</span></div>
+      <header class="title-block">
+        <p class="eyebrow">PIXEL NUMBER PUZZLE</p>
+        <h1 id="game-title">十号线 <small>TENLINE</small></h1>
+        <p class="tagline">框选数字，恰好合十。</p>
+      </header>
+
+      <div class="menu-controls">
+        <label class="field" for="mode">
+          <span>游戏模式</span>
+          <select id="mode">
+            <option value="arcade">120 秒挑战</option>
+            <option value="puzzle">不限时解谜</option>
+          </select>
+        </label>
+        <label class="field" for="size">
+          <span>棋盘尺寸</span>
+          <select id="size">
+            <option value="14x8">8 × 14</option>
+            <option value="15x9">9 × 15</option>
+            <option value="16x10">10 × 16</option>
+          </select>
+        </label>
+      </div>
+
+      <div class="menu-actions">
+        <button id="start" class="primary-button" type="button">开始游戏</button>
+        <button id="resume-puzzle" type="button" hidden>继续上次解谜</button>
+      </div>
+
+      <details class="rules">
+        <summary>玩法与技能</summary>
+        <p>按住一个数字并拖动，框出矩形。松手时，框内剩余数字之和恰好为 10 就会消除；空格不会下落或补充。</p>
+        <p>每局可使用：提示 3 次、重排 1 次、单消 1 次。</p>
+      </details>
+
+      <label class="setting" for="reduced-motion">
+        <input id="reduced-motion" type="checkbox">
+        <span>减少动画</span>
+      </label>
+      <p class="offline-note">首次在线打开后可安装并离线游玩；电脑也可直接打开本地文件。</p>
+    </section>
+
+    <section id="game-view" class="view game-panel" hidden aria-label="游戏棋盘">
+      <header class="game-header">
+        <button id="back-menu" class="icon-button" type="button" aria-label="返回主菜单">←</button>
+        <div class="mode-name"><span id="mode-label">120 秒挑战</span><small id="size-label">8 × 14</small></div>
+        <button id="pause" class="icon-button" type="button" aria-label="暂停游戏">Ⅱ</button>
+      </header>
+
+      <section class="status-bar" aria-live="polite">
+        <div id="arcade-status" class="status-grid">
+          <span><small>时间</small><b id="timer">120.0</b></span>
+          <span><small>分数</small><b id="score">0</b></span>
+          <span><small>最高</small><b id="highscore">0</b></span>
+        </div>
+        <div id="puzzle-status" class="status-grid" hidden>
+          <span><small>步数</small><b id="moves">0</b></span>
+          <span><small>消除</small><b id="cleared">0</b></span>
+          <span><small>剩余</small><b id="remaining">0</b></span>
+        </div>
+      </section>
+
+      <div class="board-wrap">
+        <div id="board" class="board" role="grid" aria-label="数字棋盘"></div>
+        <div id="selection" class="selection-outline" aria-hidden="true"></div>
+        <div id="hint-outline" class="selection-outline hint-outline" aria-hidden="true"></div>
+      </div>
+
+      <section id="skills" class="skill-grid" aria-label="技能">
+        <button id="skill-hint" type="button"><span class="skill-icon">?</span><span>提示</span><b>×<span id="hint-count">3</span></b></button>
+        <button id="skill-shuffle" type="button"><span class="skill-icon">↻</span><span>重排</span><b>×<span id="shuffle-count">1</span></b></button>
+        <button id="skill-single" type="button"><span class="skill-icon">×</span><span>单消</span><b>×<span id="single-count">1</span></b></button>
+      </section>
+
+      <section class="utility-grid" aria-label="游戏操作">
+        <button id="undo" type="button">撤销</button>
+        <button id="redo" type="button">重做</button>
+        <button id="restart" type="button">重新开始</button>
+      </section>
+
+      <p id="game-message" class="game-message" aria-live="polite"></p>
+    </section>
+  </main>
+
+  <dialog id="pause-dialog" class="pixel-dialog">
+    <h2>已暂停</h2>
+    <p>计时已停止。</p>
+    <div class="dialog-actions">
+      <button id="resume" class="primary-button" type="button">继续游戏</button>
+      <button id="pause-restart" type="button">重新开始</button>
+      <button id="pause-menu" type="button">返回菜单</button>
+    </div>
+  </dialog>
+
+  <dialog id="result-dialog" class="pixel-dialog">
+    <p class="eyebrow">ROUND COMPLETE</p>
+    <h2 id="result-title">本局结束</h2>
+    <p id="result-summary"></p>
+    <div class="dialog-actions">
+      <button id="result-undo" type="button">撤销一步</button>
+      <button id="result-restart" class="primary-button" type="button">重新开始</button>
+      <button id="result-new" type="button">新一局</button>
+      <button id="result-menu" type="button">返回菜单</button>
+    </div>
+  </dialog>
+
+  <script defer src="./js/core.js"></script>
+  <script defer src="./js/storage.js"></script>
+  <script defer src="./js/app.js"></script>
+</body>
+</html>
