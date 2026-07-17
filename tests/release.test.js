@@ -84,3 +84,35 @@ test('all install icons exist and are non-empty', () => {
     assert.ok(fs.statSync(path.join(root, file)).size > 0, file);
   }
 });
+
+test('runtime release is original, silent, local, and lightweight', () => {
+  const runtime = [
+    'index.html',
+    'styles.css',
+    'js/core.js',
+    'js/storage.js',
+    'js/app.js',
+    'manifest.webmanifest',
+    'sw.js'
+  ];
+  const text = runtime.map(read).join('\n');
+  assert.doesNotMatch(text, /nikke|azx/i);
+  assert.doesNotMatch(text, /AudioContext|new Audio|\.mp3|\.ogg|\.wav/i);
+  assert.doesNotMatch(text, /https?:\/\//);
+  const bytes = runtime.reduce(
+    (sum, file) => sum + fs.statSync(path.join(root, file)).size,
+    0
+  ) + [
+    'icon.svg', 'icon-192.png', 'icon-512.png', 'apple-touch-icon.png'
+  ].reduce(
+    (sum, file) => sum + fs.statSync(path.join(root, 'icons', file)).size,
+    0
+  );
+  assert.ok(bytes <= 250 * 1024, `runtime is ${bytes} bytes`);
+});
+
+test('release documentation and packaging script are present', () => {
+  for (const file of ['README.md', 'LICENSE', 'scripts/make-release.sh']) {
+    assert.ok(fs.statSync(path.join(root, file)).size > 0, file);
+  }
+});
