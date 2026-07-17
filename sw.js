@@ -1,12 +1,13 @@
 'use strict';
 
-const CACHE_NAME = 'tenline-v1';
+const CACHE_NAME = 'tenline-v2';
 const ASSETS = [
   './',
   './index.html',
   './styles.css',
   './js/core.js',
   './js/storage.js',
+  './js/geometry.js',
   './js/app.js',
   './manifest.webmanifest',
   './icons/icon.svg',

@@ -13,7 +13,12 @@ test('index references only relative local runtime assets', () => {
   assert.match(html, /href="\.\/styles\.css"/);
   assert.match(html, /src="\.\/js\/core\.js"/);
   assert.match(html, /src="\.\/js\/storage\.js"/);
+  assert.match(html, /src="\.\/js\/geometry\.js"/);
   assert.match(html, /src="\.\/js\/app\.js"/);
+  assert.ok(
+    html.indexOf('./js/geometry.js') < html.indexOf('./js/app.js'),
+    'geometry must load before app'
+  );
   assert.doesNotMatch(html, /https?:\/\//);
 });
 
@@ -80,6 +85,18 @@ test('desktop panel width is fitted from viewport height and board ratio', () =>
   assert.match(source, /fitGamePanel\(\);/);
 });
 
+test('pointer geometry and cache v2 are wired into the runtime', () => {
+  const source = read('js/app.js');
+  const worker = read('sw.js');
+  const pkg = JSON.parse(read('package.json'));
+  assert.match(source, /const Geometry = window\.TenlineGeometry/);
+  assert.match(source, /Geometry\.pointFromClient\(\{/);
+  assert.match(source, /bounds:\s*ui\.board\.getBoundingClientRect\(\)/);
+  assert.match(worker, /const CACHE_NAME = 'tenline-v2'/);
+  assert.ok(worker.includes('./js/geometry.js'));
+  assert.equal(pkg.version, '1.0.1');
+});
+
 test('manifest and service worker use relative subpath-safe assets', () => {
   const manifest = JSON.parse(read('manifest.webmanifest'));
   assert.equal(manifest.start_url, './');
@@ -89,7 +106,8 @@ test('manifest and service worker use relative subpath-safe assets', () => {
   assert.ok(manifest.icons.some((icon) => icon.sizes === '512x512'));
   const worker = read('sw.js');
   for (const asset of [
-    './index.html', './styles.css', './js/core.js', './js/storage.js', './js/app.js'
+    './index.html', './styles.css', './js/core.js', './js/storage.js',
+    './js/geometry.js', './js/app.js'
   ]) {
     assert.ok(worker.includes(asset), `missing precache entry ${asset}`);
   }
@@ -113,6 +131,7 @@ test('runtime release is original, silent, local, and lightweight', () => {
     'styles.css',
     'js/core.js',
     'js/storage.js',
+    'js/geometry.js',
     'js/app.js',
     'manifest.webmanifest',
     'sw.js'

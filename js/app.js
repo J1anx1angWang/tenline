@@ -3,6 +3,7 @@
 
   const Core = window.TenlineCore;
   const Storage = window.TenlineStorage;
+  const Geometry = window.TenlineGeometry;
 
   let storageLike = null;
   try {
@@ -345,8 +346,14 @@
   function updateSelection(event) {
     if (!drag || drag.pointerId !== event.pointerId) return;
     event.preventDefault();
-    const element = document.elementFromPoint(event.clientX, event.clientY);
-    const point = element && cellFromTarget(element);
+    const point = Geometry.pointFromClient({
+      clientX: event.clientX,
+      clientY: event.clientY,
+      bounds: ui.board.getBoundingClientRect(),
+      rows: game.rows,
+      cols: game.cols,
+      tolerance: 16
+    });
     if (point) {
       drag.end = point;
       renderSelection();
