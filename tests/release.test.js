@@ -37,3 +37,23 @@ test('UI exposes every controller hook exactly once', () => {
     assert.equal((html.match(new RegExp(`id="${id}"`, 'g')) || []).length, 1, id);
   }
 });
+
+test('browser controller registers pointer, visibility, mode, and skill behavior', () => {
+  const source = read('js/app.js');
+  assert.match(source, /pointerdown/);
+  assert.match(source, /pointermove/);
+  assert.match(source, /pointerup/);
+  assert.match(source, /pointercancel/);
+  assert.match(source, /visibilitychange/);
+  assert.match(source, /Core\.useHint/);
+  assert.match(source, /Core\.useShuffle/);
+  assert.match(source, /Core\.useSingleClear/);
+  assert.match(source, /location\.protocol === 'http:'/);
+  assert.match(source, /location\.protocol === 'https:'/);
+  assert.doesNotMatch(source, /currentSum|AudioContext|new Audio/);
+});
+
+test('author styles cannot override the hidden attribute', () => {
+  const css = read('styles.css');
+  assert.match(css, /\[hidden\]\s*\{[^}]*display:\s*none\s*!important/);
+});
