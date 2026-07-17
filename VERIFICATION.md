@@ -11,7 +11,7 @@ Verified on 2026-07-17 in the project workspace.
 - `git diff --check`: passed.
 - Runtime scan: no third-party game branding, audio APIs/files, or remote HTTP(S) runtime URLs.
 - Release archive: `unzip -t dist/tenline-offline.zip` passed.
-- Uncompressed runtime: 54,627 bytes; release ZIP: 19,259 bytes.
+- Uncompressed runtime: 54,844 bytes; release ZIP: 19,366 bytes.
 
 ## Browser checks
 
@@ -37,6 +37,17 @@ A clean Chrome profile was used against a local HTTP origin:
 4. Reload completed from the service worker with the TENLINE title, DOM, and game core available.
 
 This verifies the intended "open once online, then play offline" flow.
+
+## Public deployment check
+
+- Repository: <https://github.com/J1anx1angWang/tenline>
+- GitHub Pages: <https://j1anx1angwang.github.io/tenline/>
+- Pages build status: `built`; HTTPS request returned HTTP 200.
+- A second clean Chrome profile loaded the public Pages URL and confirmed:
+  - all 11 cached assets resolve under the `/tenline/` subpath;
+  - the service worker is activated and controls the page;
+  - a fully offline reload retains the title, menu, game DOM, and game core;
+  - no browser console errors were recorded.
 
 ## Remaining platform note
 
