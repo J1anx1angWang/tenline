@@ -254,6 +254,7 @@ button:disabled {
 
 .game-panel {
   display: grid;
+  justify-self: center;
   gap: 8px;
   padding: 9px;
 }
@@ -474,6 +475,11 @@ button:disabled {
 
   .board-wrap {
     padding: 2px;
+  }
+
+  .game-panel[data-cols="8"] .board-wrap {
+    width: calc(100% - 6px);
+    margin-inline: auto;
   }
 
   .skill-grid button {

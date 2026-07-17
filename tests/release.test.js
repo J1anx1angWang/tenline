@@ -58,6 +58,22 @@ test('author styles cannot override the hidden attribute', () => {
   assert.match(css, /\[hidden\]\s*\{[^}]*display:\s*none\s*!important/);
 });
 
+test('eight-column mobile boards use the compact-height layout branch', () => {
+  const source = read('js/app.js');
+  const css = read('styles.css');
+  assert.match(source, /gameView\.dataset\.cols\s*=\s*String\(game\.cols\)/);
+  assert.match(css, /\.game-panel\[data-cols="8"\]\s+\.board-wrap/);
+});
+
+test('desktop panel width is fitted from viewport height and board ratio', () => {
+  const source = read('js/app.js');
+  assert.match(source, /function fitGamePanel\(\)/);
+  assert.match(source, /window\.innerHeight\s*-\s*290/);
+  assert.match(source, /maxBoardHeight\s*\*\s*game\.cols\s*\/\s*game\.rows/);
+  assert.match(source, /Math\.max\(380,\s*boardWidth\s*\+\s*36\)/);
+  assert.match(source, /fitGamePanel\(\);/);
+});
+
 test('manifest and service worker use relative subpath-safe assets', () => {
   const manifest = JSON.parse(read('manifest.webmanifest'));
   assert.equal(manifest.start_url, './');

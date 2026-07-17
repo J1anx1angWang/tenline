@@ -161,6 +161,7 @@
 
   function renderBoard() {
     const fragment = document.createDocumentFragment();
+    ui.gameView.dataset.cols = String(game.cols);
     ui.board.style.setProperty('--cols', game.cols);
     ui.board.setAttribute('aria-rowcount', String(game.rows));
     ui.board.setAttribute('aria-colcount', String(game.cols));
@@ -219,8 +220,20 @@
     ui.pause.setAttribute('aria-label', game.status === 'paused' ? '继续游戏' : '暂停游戏');
   }
 
+  function fitGamePanel() {
+    if (!game || window.innerWidth < 700) {
+      ui.gameView.style.width = '';
+      return;
+    }
+    const maxBoardHeight = Math.max(360, window.innerHeight - 290);
+    const boardWidth = maxBoardHeight * game.cols / game.rows;
+    const panelWidth = Math.min(560, Math.max(380, boardWidth + 36));
+    ui.gameView.style.width = `${Math.round(panelWidth)}px`;
+  }
+
   function render() {
     if (!game) return;
+    fitGamePanel();
     renderBoard();
     renderStatus();
     renderControls();
@@ -515,7 +528,10 @@
   ui.board.addEventListener('pointerup', endSelection);
   ui.board.addEventListener('pointercancel', cancelSelection);
   window.addEventListener('blur', cancelSelection);
-  window.addEventListener('resize', cancelSelection);
+  window.addEventListener('resize', () => {
+    cancelSelection();
+    fitGamePanel();
+  });
 
   ui.pauseDialog.addEventListener('cancel', (event) => {
     event.preventDefault();
