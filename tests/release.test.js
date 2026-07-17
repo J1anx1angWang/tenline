@@ -57,3 +57,30 @@ test('author styles cannot override the hidden attribute', () => {
   const css = read('styles.css');
   assert.match(css, /\[hidden\]\s*\{[^}]*display:\s*none\s*!important/);
 });
+
+test('manifest and service worker use relative subpath-safe assets', () => {
+  const manifest = JSON.parse(read('manifest.webmanifest'));
+  assert.equal(manifest.start_url, './');
+  assert.equal(manifest.scope, './');
+  assert.equal(manifest.display, 'standalone');
+  assert.ok(manifest.icons.some((icon) => icon.sizes === '192x192'));
+  assert.ok(manifest.icons.some((icon) => icon.sizes === '512x512'));
+  const worker = read('sw.js');
+  for (const asset of [
+    './index.html', './styles.css', './js/core.js', './js/storage.js', './js/app.js'
+  ]) {
+    assert.ok(worker.includes(asset), `missing precache entry ${asset}`);
+  }
+  assert.doesNotMatch(worker, /https?:\/\//);
+});
+
+test('all install icons exist and are non-empty', () => {
+  for (const file of [
+    'icons/icon.svg',
+    'icons/icon-192.png',
+    'icons/icon-512.png',
+    'icons/apple-touch-icon.png'
+  ]) {
+    assert.ok(fs.statSync(path.join(root, file)).size > 0, file);
+  }
+});
