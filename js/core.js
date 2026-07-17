@@ -107,6 +107,147 @@
     return { board, seed: candidateSeed };
   }
 
+  const BOARD_SIZES = Object.freeze([
+    Object.freeze({ rows: 14, cols: 8 }),
+    Object.freeze({ rows: 15, cols: 9 }),
+    Object.freeze({ rows: 16, cols: 10 })
+  ]);
+  const INITIAL_SKILLS = Object.freeze({ hint: 3, shuffle: 1, singleClear: 1 });
+
+  function cloneSkills(skills) {
+    return {
+      hint: skills.hint,
+      shuffle: skills.shuffle,
+      singleClear: skills.singleClear
+    };
+  }
+
+  function createGame({ mode, rows, cols, seed, board }) {
+    if (!['arcade', 'puzzle'].includes(mode)) throw new TypeError('Invalid mode');
+    const generated = board
+      ? { board: board.slice(), seed: seed >>> 0 }
+      : generateBoard({ rows, cols, seed });
+    return {
+      mode,
+      rows,
+      cols,
+      seed: generated.seed,
+      initialBoard: generated.board.slice(),
+      board: generated.board.slice(),
+      status: 'running',
+      score: 0,
+      moves: 0,
+      clearedCount: 0,
+      remainingMs: mode === 'arcade' ? 120000 : null,
+      skills: cloneSkills(INITIAL_SKILLS),
+      history: [],
+      future: []
+    };
+  }
+
+  function snapshot(state) {
+    return {
+      board: state.board.slice(),
+      status: state.status,
+      score: state.score,
+      moves: state.moves,
+      clearedCount: state.clearedCount,
+      remainingMs: state.remainingMs,
+      skills: cloneSkills(state.skills)
+    };
+  }
+
+  function restore(state, saved) {
+    return {
+      ...state,
+      ...saved,
+      board: saved.board.slice(),
+      skills: cloneSkills(saved.skills)
+    };
+  }
+
+  function terminalStatus(board, rows, cols) {
+    if (board.every((value) => value === 0)) return 'won';
+    if (findLegalMoves(board, rows, cols).length === 0) return 'stuck';
+    return 'running';
+  }
+
+  function withHistory(state, changed) {
+    if (state.mode !== 'puzzle') return { ...changed, history: [], future: [] };
+    return {
+      ...changed,
+      history: [...state.history, snapshot(state)],
+      future: []
+    };
+  }
+
+  function applySelection(state, rect) {
+    if (state.status !== 'running' || sumRect(state.board, state.cols, rect) !== 10) {
+      return state;
+    }
+    const result = clearRect(state.board, state.cols, rect);
+    const changed = {
+      ...state,
+      board: result.board,
+      score: state.score + (state.mode === 'arcade' ? result.cleared : 0),
+      moves: state.moves + 1,
+      clearedCount: state.clearedCount + result.cleared,
+      status: terminalStatus(result.board, state.rows, state.cols)
+    };
+    return withHistory(state, changed);
+  }
+
+  function pauseGame(state) {
+    if (state.mode !== 'arcade' || state.status !== 'running') return state;
+    return { ...state, status: 'paused' };
+  }
+
+  function resumeGame(state) {
+    if (state.mode !== 'arcade' || state.status !== 'paused') return state;
+    return { ...state, status: 'running' };
+  }
+
+  function tickGame(state, elapsedMs) {
+    if (state.mode !== 'arcade' || state.status !== 'running') return state;
+    const remainingMs = Math.max(0, state.remainingMs - Math.max(0, elapsedMs));
+    return {
+      ...state,
+      remainingMs,
+      status: remainingMs === 0 ? 'timeout' : state.status
+    };
+  }
+
+  function undo(state) {
+    if (state.mode !== 'puzzle' || state.history.length === 0) return state;
+    const saved = state.history[state.history.length - 1];
+    return {
+      ...restore(state, saved),
+      history: state.history.slice(0, -1),
+      future: [snapshot(state), ...state.future]
+    };
+  }
+
+  function redo(state) {
+    if (state.mode !== 'puzzle' || state.future.length === 0) return state;
+    const saved = state.future[0];
+    return {
+      ...restore(state, saved),
+      history: [...state.history, snapshot(state)],
+      future: state.future.slice(1)
+    };
+  }
+
+  function restartPuzzle(state) {
+    if (state.mode !== 'puzzle') return state;
+    return createGame({
+      mode: 'puzzle',
+      rows: state.rows,
+      cols: state.cols,
+      seed: state.seed,
+      board: state.initialBoard
+    });
+  }
+
   return {
     normalizeRect,
     indexOf,
@@ -116,6 +257,16 @@
     createRng,
     findLegalMoves,
     clearRect,
-    generateBoard
+    generateBoard,
+    BOARD_SIZES,
+    INITIAL_SKILLS,
+    createGame,
+    applySelection,
+    pauseGame,
+    resumeGame,
+    tickGame,
+    undo,
+    redo,
+    restartPuzzle
   };
 });

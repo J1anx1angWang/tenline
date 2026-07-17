@@ -47,3 +47,38 @@ test('seeded generation is reproducible and never starts stuck', () => {
   assert.ok(first.board.every((value) => value >= 1 && value <= 9));
   assert.ok(Core.findLegalMoves(first.board, 14, 8).length > 0);
 });
+
+test('arcade clear scores cells and ends when no move remains', () => {
+  const game = Core.createGame({ mode: 'arcade', rows: 1, cols: 3, seed: 1, board: [4, 6, 9] });
+  const next = Core.applySelection(game, { top: 0, left: 0, bottom: 0, right: 1 });
+  assert.deepEqual(next.board, [0, 0, 9]);
+  assert.equal(next.score, 2);
+  assert.equal(next.moves, 1);
+  assert.equal(next.status, 'stuck');
+  assert.equal(next.history.length, 0);
+});
+
+test('invalid selection is an identity transition', () => {
+  const game = Core.createGame({ mode: 'arcade', rows: 1, cols: 3, seed: 1, board: [4, 5, 9] });
+  assert.equal(Core.applySelection(game, { top: 0, left: 0, bottom: 0, right: 1 }), game);
+});
+
+test('puzzle undo and redo restore the complete move state', () => {
+  const game = Core.createGame({ mode: 'puzzle', rows: 1, cols: 4, seed: 1, board: [4, 6, 3, 7] });
+  const moved = Core.applySelection(game, { top: 0, left: 0, bottom: 0, right: 1 });
+  const undone = Core.undo(moved);
+  assert.deepEqual(undone.board, [4, 6, 3, 7]);
+  assert.equal(undone.moves, 0);
+  const redone = Core.redo(undone);
+  assert.deepEqual(redone.board, [0, 0, 3, 7]);
+  assert.equal(redone.moves, 1);
+});
+
+test('arcade timer pauses and reaches timeout without drift math', () => {
+  const game = Core.createGame({ mode: 'arcade', rows: 1, cols: 2, seed: 1, board: [4, 6] });
+  const atOneSecond = Core.tickGame(game, 1000);
+  assert.equal(atOneSecond.remainingMs, 119000);
+  const paused = Core.pauseGame(atOneSecond);
+  assert.equal(Core.tickGame(paused, 5000).remainingMs, 119000);
+  assert.equal(Core.tickGame(Core.resumeGame(paused), 120000).status, 'timeout');
+});
