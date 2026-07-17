@@ -161,7 +161,6 @@
 
   function renderBoard() {
     const fragment = document.createDocumentFragment();
-    ui.gameView.dataset.cols = String(game.cols);
     ui.board.style.setProperty('--cols', game.cols);
     ui.board.setAttribute('aria-rowcount', String(game.rows));
     ui.board.setAttribute('aria-colcount', String(game.cols));

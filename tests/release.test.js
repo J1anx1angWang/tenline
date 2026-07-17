@@ -58,11 +58,17 @@ test('author styles cannot override the hidden attribute', () => {
   assert.match(css, /\[hidden\]\s*\{[^}]*display:\s*none\s*!important/);
 });
 
-test('eight-column mobile boards use the compact-height layout branch', () => {
+test('mobile game layout fills width and enlarges touch controls', () => {
   const source = read('js/app.js');
   const css = read('styles.css');
-  assert.match(source, /gameView\.dataset\.cols\s*=\s*String\(game\.cols\)/);
-  assert.match(css, /\.game-panel\[data-cols="8"\]\s+\.board-wrap/);
+  const mobile = css.slice(css.indexOf('@media (max-width: 430px)'));
+  assert.match(mobile, /\.game-panel\s*\{[^}]*align-self:\s*start/);
+  assert.match(mobile, /\.game-panel\s*\{[^}]*justify-self:\s*stretch/);
+  assert.match(mobile, /\.game-panel\s*\{[^}]*width:\s*100%/);
+  assert.match(mobile, /\.cell\s*\{[^}]*font-size:\s*clamp\(\.9rem,\s*4\.4vw,\s*1\.15rem\)/);
+  assert.match(mobile, /\.skill-grid button,[\s\S]*\.utility-grid button,[\s\S]*\.icon-button\s*\{[^}]*min-height:\s*52px/);
+  assert.doesNotMatch(css, /\.game-panel\[data-cols="8"\]/);
+  assert.doesNotMatch(source, /gameView\.dataset\.cols/);
 });
 
 test('desktop panel width is fitted from viewport height and board ratio', () => {

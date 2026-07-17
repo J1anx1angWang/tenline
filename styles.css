@@ -463,6 +463,9 @@ button:disabled {
   }
 
   .game-panel {
+    align-self: start;
+    justify-self: stretch;
+    width: 100%;
     gap: 5px;
     padding: 5px;
     border-width: 2px;
@@ -474,18 +477,23 @@ button:disabled {
   }
 
   .board-wrap {
+    width: 100%;
     padding: 2px;
   }
 
-  .game-panel[data-cols="8"] .board-wrap {
-    width: calc(100% - 6px);
-    margin-inline: auto;
+  .cell {
+    font-size: clamp(.9rem, 4.4vw, 1.15rem);
   }
 
   .skill-grid button {
     grid-template-columns: 1fr;
     gap: 2px;
-    min-height: 48px;
+  }
+
+  .skill-grid button,
+  .utility-grid button,
+  .icon-button {
+    min-height: 52px;
   }
 
   .skill-icon {
