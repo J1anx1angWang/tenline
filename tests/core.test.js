@@ -82,3 +82,48 @@ test('arcade timer pauses and reaches timeout without drift math', () => {
   assert.equal(Core.tickGame(paused, 5000).remainingMs, 119000);
   assert.equal(Core.tickGame(Core.resumeGame(paused), 120000).status, 'timeout');
 });
+
+test('hint prefers most cleared cells and consumes one charge', () => {
+  const game = Core.createGame({
+    mode: 'puzzle',
+    rows: 2,
+    cols: 3,
+    seed: 1,
+    board: [4, 6, 9, 1, 2, 7]
+  });
+  const result = Core.useHint(game);
+  assert.deepEqual(result.move.rect, { top: 1, left: 0, bottom: 1, right: 2 });
+  assert.equal(result.state.skills.hint, 2);
+  assert.deepEqual(result.state.board, game.board);
+});
+
+test('shuffle changes order, preserves values, and only spends on success', () => {
+  const game = Core.createGame({
+    mode: 'puzzle',
+    rows: 2,
+    cols: 3,
+    seed: 42,
+    board: [1, 2, 3, 4, 5, 6]
+  });
+  const result = Core.useShuffle(game);
+  assert.equal(result.applied, true);
+  assert.notDeepEqual(result.state.board, game.board);
+  assert.deepEqual(result.state.board.filter(Boolean).sort(), [1, 2, 3, 4, 5, 6]);
+  assert.equal(result.state.skills.shuffle, 0);
+  assert.ok(Core.findLegalMoves(result.state.board, 2, 3).length > 0);
+});
+
+test('single clear removes one number, does not score, and is undoable', () => {
+  const game = Core.createGame({
+    mode: 'puzzle',
+    rows: 1,
+    cols: 4,
+    seed: 1,
+    board: [4, 6, 3, 7]
+  });
+  const changed = Core.useSingleClear(game, 0, 2);
+  assert.deepEqual(changed.board, [4, 6, 0, 7]);
+  assert.equal(changed.score, 0);
+  assert.equal(changed.skills.singleClear, 0);
+  assert.deepEqual(Core.undo(changed).board, game.board);
+});

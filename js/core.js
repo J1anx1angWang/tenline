@@ -248,6 +248,94 @@
     });
   }
 
+  function compareMoves(first, second) {
+    const firstArea = (first.rect.bottom - first.rect.top + 1) *
+      (first.rect.right - first.rect.left + 1);
+    const secondArea = (second.rect.bottom - second.rect.top + 1) *
+      (second.rect.right - second.rect.left + 1);
+    return second.cleared - first.cleared ||
+      firstArea - secondArea ||
+      first.rect.top - second.rect.top ||
+      first.rect.left - second.rect.left ||
+      first.rect.bottom - second.rect.bottom ||
+      first.rect.right - second.rect.right;
+  }
+
+  function useHint(state) {
+    if (state.status !== 'running' || state.skills.hint <= 0) {
+      return { state, move: null };
+    }
+    const move = findLegalMoves(state.board, state.rows, state.cols)
+      .sort(compareMoves)[0] || null;
+    if (!move) return { state, move: null };
+    const changed = withHistory(state, {
+      ...state,
+      skills: { ...state.skills, hint: state.skills.hint - 1 }
+    });
+    return { state: changed, move };
+  }
+
+  function shuffled(values, rng) {
+    const result = values.slice();
+    for (let index = result.length - 1; index > 0; index -= 1) {
+      const other = Math.floor(rng() * (index + 1));
+      [result[index], result[other]] = [result[other], result[index]];
+    }
+    return result;
+  }
+
+  function boardsEqual(first, second) {
+    return first.length === second.length && first.every((value, index) => value === second[index]);
+  }
+
+  function useShuffle(state) {
+    if (state.status !== 'running' || state.skills.shuffle <= 0) {
+      return { state, applied: false };
+    }
+    const positions = state.board
+      .map((value, index) => value === 0 ? -1 : index)
+      .filter((index) => index >= 0);
+    const values = positions.map((index) => state.board[index]);
+    const rng = createRng(
+      (state.seed ^ state.moves ^ state.clearedCount ^ 0x9E3779B9) >>> 0
+    );
+    for (let attempt = 0; attempt < 256; attempt += 1) {
+      const candidate = state.board.slice();
+      const order = shuffled(values, rng);
+      positions.forEach((position, index) => {
+        candidate[position] = order[index];
+      });
+      if (boardsEqual(candidate, state.board)) continue;
+      if (findLegalMoves(candidate, state.rows, state.cols).length > 0) {
+        const changed = withHistory(state, {
+          ...state,
+          board: candidate,
+          status: 'running',
+          skills: { ...state.skills, shuffle: state.skills.shuffle - 1 }
+        });
+        return { state: changed, applied: true };
+      }
+    }
+    return { state, applied: false };
+  }
+
+  function useSingleClear(state, row, col) {
+    if (state.status !== 'running' || state.skills.singleClear <= 0) return state;
+    if (row < 0 || col < 0 || row >= state.rows || col >= state.cols) return state;
+    const index = indexOf(row, col, state.cols);
+    if (state.board[index] === 0) return state;
+    const board = state.board.slice();
+    board[index] = 0;
+    const changed = {
+      ...state,
+      board,
+      clearedCount: state.clearedCount + 1,
+      skills: { ...state.skills, singleClear: state.skills.singleClear - 1 },
+      status: terminalStatus(board, state.rows, state.cols)
+    };
+    return withHistory(state, changed);
+  }
+
   return {
     normalizeRect,
     indexOf,
@@ -267,6 +355,10 @@
     tickGame,
     undo,
     redo,
-    restartPuzzle
+    restartPuzzle,
+    compareMoves,
+    useHint,
+    useShuffle,
+    useSingleClear
   };
 });
