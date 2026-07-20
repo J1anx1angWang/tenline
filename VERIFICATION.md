@@ -2,7 +2,7 @@
 
 ## v1.0.2 cache-bypassing install repair
 
-Verified on 2026-07-19 in the isolated `fix/sw-precache-reload` worktree. This Task 6 gate was local-only; it did not publish, tag, merge, or perform the retained-profile/browser checks reserved for Task 7.
+Verified on 2026-07-19 in the isolated `fix/sw-precache-reload` worktree. Task 6 completed the automated local gate, and Task 7A completed the local retained-profile browser gate. These local gates did not publish, tag, or merge the release; hosted/publication and physical iPhone checks remain pending.
 
 ### Automated checks
 
@@ -15,6 +15,17 @@ Verified on 2026-07-19 in the isolated `fix/sw-precache-reload` worktree. This T
 - `bash scripts/make-release.sh`: rebuilt the offline ZIP and its integrated `unzip -t` reported no compressed-data errors.
 - Packaged-worker inspection found `const CACHE_NAME = 'tenline-v3';` and `cache: 'reload'` in `dist/tenline-offline.zip`.
 - Release ZIP: 20,121 bytes; SHA-256 `7bb90a04dc89471c42f512d8fbc639c58335028bbfa10210e7ad0e5771d29ecf`.
+
+### Retained-profile migration and offline checks
+
+- The retained-profile test switched from v1 fixture commit `3076b095318bd46398f0dc9867c5dccef508b28d` to v3 fixture commit `6bb2dff8ad0fd6ec8f6bf4a419550389472cc7df` while keeping the same Chrome 139.0.7258.138 profile/process and the same local origin. Both fixture phases served `Cache-Control: public, max-age=86400`; no browser cache, Cache Storage, or site data was manually cleared.
+- Before the update, the only cache was `tenline-v1`, with exactly 11 entries; the geometry cache markers were absent and runtime `TenlineGeometry` was `undefined`.
+- Normal `registration.update()` produced only `tenline-v3`, with exactly 12 patched entries. The controller equaled the activated active worker, and `installing` and `waiting` were null.
+- All 12 install asset requests reached the server with request headers `Cache-Control: no-cache` and `Pragma: no-cache`.
+- Normal `location.reload()`, gated on `Page.loadEventFired`, loaded `TenlineGeometry` and recorded zero console errors.
+- A real emulated-touch pointer drag selected a legal left-edge sum-10 rectangle with its final coordinate 10 pixels beyond the board; moves changed 0 → 1 and remaining cells changed 112 → 110.
+- Both the page and live service worker were forced offline. An uncached sentinel failed, while the subsequent canonical cached reload succeeded from `tenline-v3` with zero console errors.
+- The first headless CDP `Page.reload` observation was rejected as a verifier false negative because it emitted no navigation or lifecycle event. The fresh `Page.loadEventFired`-gated run is the accepted result.
 
 ## v1.0.1 release verification
 
