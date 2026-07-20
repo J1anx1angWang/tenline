@@ -85,16 +85,16 @@ test('desktop panel width is fitted from viewport height and board ratio', () =>
   assert.match(source, /fitGamePanel\(\);/);
 });
 
-test('pointer geometry and cache v2 are wired into the runtime', () => {
+test('pointer geometry and cache v3 are wired into the runtime', () => {
   const source = read('js/app.js');
   const worker = read('sw.js');
   const pkg = JSON.parse(read('package.json'));
   assert.match(source, /const Geometry = window\.TenlineGeometry/);
   assert.match(source, /Geometry\.pointFromClient\(\{/);
   assert.match(source, /bounds:\s*ui\.board\.getBoundingClientRect\(\)/);
-  assert.match(worker, /const CACHE_NAME = 'tenline-v2'/);
+  assert.match(worker, /const CACHE_NAME = 'tenline-v3'/);
   assert.ok(worker.includes('./js/geometry.js'));
-  assert.equal(pkg.version, '1.0.1');
+  assert.equal(pkg.version, '1.0.2');
 });
 
 test('manifest and service worker use relative subpath-safe assets', () => {

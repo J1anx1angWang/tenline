@@ -1,6 +1,6 @@
 'use strict';
 
-const CACHE_NAME = 'tenline-v2';
+const CACHE_NAME = 'tenline-v3';
 const ASSETS = [
   './',
   './index.html',
@@ -16,10 +16,16 @@ const ASSETS = [
   './icons/apple-touch-icon.png'
 ];
 
+function freshAssetRequest(asset) {
+  return new Request(new URL(asset, self.registration.scope), {
+    cache: 'reload'
+  });
+}
+
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME)
-      .then((cache) => cache.addAll(ASSETS))
+      .then((cache) => cache.addAll(ASSETS.map(freshAssetRequest)))
       .then(() => self.skipWaiting())
   );
 });

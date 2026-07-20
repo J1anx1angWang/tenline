@@ -1,5 +1,23 @@
 # TENLINE release verification
 
+## v1.0.2 cache-bypassing install repair
+
+Verified on 2026-07-19 in the isolated `fix/sw-precache-reload` worktree. This Task 6 gate was local-only; it did not publish, tag, merge, or perform the retained-profile/browser checks reserved for Task 7.
+
+### Automated checks
+
+- Baseline `npm test` before edits: 32 tests passed, 0 failed.
+- RED `node --test tests/sw.test.js tests/release.test.js`: exited 1 with 11 tests passed and 2 expected failures because the worker still opened `tenline-v2`.
+- GREEN `node --test tests/sw.test.js tests/release.test.js`: 13 tests passed, 0 failed.
+- `npm test`: 33 tests passed, 0 failed.
+- `node --check sw.js`: passed.
+- `git diff --check`: passed.
+- `bash scripts/make-release.sh`: rebuilt the offline ZIP and its integrated `unzip -t` reported no compressed-data errors.
+- Packaged-worker inspection found `const CACHE_NAME = 'tenline-v3';` and `cache: 'reload'` in `dist/tenline-offline.zip`.
+- Release ZIP: 20,121 bytes; SHA-256 `7bb90a04dc89471c42f512d8fbc639c58335028bbfa10210e7ad0e5771d29ecf`.
+
+## v1.0.1 release verification
+
 Verified on 2026-07-19 in the isolated `feature/mobile-usability-v101` worktree. Browser checks used Google Chrome 139.0.7258.138 with a clean profile against a local HTTP origin.
 
 ## Automated checks
