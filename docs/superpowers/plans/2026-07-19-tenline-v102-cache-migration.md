@@ -4,7 +4,7 @@
 
 **Goal:** Ensure every service-worker precache install fetches current response bodies instead of reusing stale browser HTTP-cache entries, then publish and validate v1.0.2.
 
-**Architecture:** Keep the existing cache-first runtime behavior and change only the install boundary. The worker will resolve each local asset under its registration scope, construct a real `Request` with cache mode `reload`, and pass those requests to Cache Storage under a new `tenline-v3` namespace; a Node VM harness will regression-test the install event itself.
+**Architecture:** Keep the existing cache-first runtime behavior, repair the install boundary, and scope activation cleanup to known TENLINE legacy caches. The worker resolves each local asset under its registration scope, constructs a real `Request` with cache mode `reload`, and passes those requests to Cache Storage under a new `tenline-v3` namespace; a Node VM harness regression-tests install and activation events.
 
 **Tech Stack:** HTML5, vanilla JavaScript, Service Worker and Cache APIs, Node.js built-in test runner/VM, Bash release packaging, GitHub Pages.
 
@@ -14,6 +14,7 @@
 - Every one of the 12 precached assets must be requested with `cache: 'reload'` during worker installation.
 - Advance the offline cache namespace to `tenline-v3` and the package/release version to `1.0.2`.
 - Preserve relative, subpath-safe runtime assets and GitHub Pages compatibility.
+- Activation may delete only known legacy caches `tenline-v1` and `tenline-v2`; it must preserve unrelated Cache Storage namespaces on the shared GitHub Pages origin.
 - Preserve all game rules, visuals, touch behavior, direct-file behavior, and the dependency-free runtime.
 - Keep the release silent, local-only, and free of third-party game branding.
 - The public commit author must remain `b1gSaki <b1gSaki@users.noreply.github.com>`.
@@ -24,6 +25,7 @@
 
 - Create `tests/sw.test.js`: execute the real worker script in a service-worker-shaped VM harness and verify install requests bypass the HTTP cache.
 - Modify `sw.js`: construct scope-resolved `Request` objects with cache mode `reload` and use cache namespace `tenline-v3`.
+- Modify `sw.js`: restrict activation cleanup to `tenline-v1` and `tenline-v2`.
 - Modify `tests/release.test.js`: enforce the new cache namespace and package version.
 - Modify `package.json`: identify the patch release as `1.0.2`.
 - Modify `VERIFICATION.md`: record v1.0.2 automated, migration, hosted, offline, and artifact evidence only after those checks run.
@@ -174,6 +176,95 @@ Record only commands actually run and their observed results in `VERIFICATION.md
 ```bash
 git add tests/sw.test.js tests/release.test.js sw.js package.json VERIFICATION.md dist/tenline-offline.zip docs/superpowers/plans/2026-07-19-tenline-v102-cache-migration.md
 git commit -m "fix: bypass stale cache during offline upgrade"
+```
+
+---
+
+### Task 8: Preserve unrelated origin caches
+
+**Files:**
+- Modify: `tests/sw.test.js`
+- Modify: `sw.js:3-4,33-40`
+- Modify: `VERIFICATION.md`
+- Regenerate: `dist/tenline-offline.zip`
+
+**Interfaces:**
+- Consumes: Cache Storage names returned by `caches.keys()` during activation.
+- Produces: deletion requests only for exact legacy TENLINE names `tenline-v1` and `tenline-v2`; the current `tenline-v3` cache and every unrelated cache remain untouched.
+
+- [ ] **Step 1: Write the failing activation regression test and strengthen the install assertion**
+
+Refactor the existing VM harness in `tests/sw.test.js` only enough to invoke both registered `install` and `activate` listeners and capture calls to `caches.delete`. Add this behavior test:
+
+```js
+test('activate deletes legacy TENLINE caches but preserves unrelated caches', async () => {
+  const deletedCaches = await runActivate([
+    'tenline-v1',
+    'other-pwa-cache',
+    'tenline-v2',
+    'tenline-v3'
+  ]);
+  assert.deepEqual(deletedCaches.sort(), ['tenline-v1', 'tenline-v2']);
+});
+```
+
+In the install test, compare the actual URL set with all 12 exact scope-resolved asset URLs and assert uniqueness:
+
+```js
+const expectedAssets = [
+  './', './index.html', './styles.css', './js/core.js',
+  './js/storage.js', './js/geometry.js', './js/app.js',
+  './manifest.webmanifest', './icons/icon.svg', './icons/icon-192.png',
+  './icons/icon-512.png', './icons/apple-touch-icon.png'
+].map((asset) => new URL(asset, scope).href).sort();
+const actualAssets = addedRequests.map((request) => request.url).sort();
+assert.deepEqual(actualAssets, expectedAssets);
+assert.equal(new Set(actualAssets).size, 12);
+```
+
+- [ ] **Step 2: Run the focused test to verify RED**
+
+Run:
+
+```bash
+node --test tests/sw.test.js
+```
+
+Expected: the install test remains green and the activation test fails because current activation also deletes `other-pwa-cache`.
+
+- [ ] **Step 3: Implement the minimal activation cleanup fix**
+
+Add the exact legacy list and use it in the existing filter:
+
+```js
+const LEGACY_CACHE_NAMES = ['tenline-v1', 'tenline-v2'];
+
+// inside activate
+.filter((key) => LEGACY_CACHE_NAMES.includes(key))
+```
+
+Do not change install/fetch behavior, game code, package version, or cache namespace.
+
+- [ ] **Step 4: Verify GREEN, update evidence, and rebuild the artifact**
+
+Run:
+
+```bash
+node --test tests/sw.test.js
+npm test
+node --check sw.js
+git diff --check
+bash scripts/make-release.sh
+unzip -t dist/tenline-offline.zip
+```
+
+Expected: 2 service-worker tests and 34 total tests pass; syntax/diff/archive checks pass. Update `VERIFICATION.md` with only actual results, ZIP size, and SHA-256.
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add tests/sw.test.js sw.js VERIFICATION.md dist/tenline-offline.zip docs/superpowers/plans/2026-07-19-tenline-v102-cache-migration.md
+git commit -m "fix: preserve unrelated offline caches"
 ```
 
 ---

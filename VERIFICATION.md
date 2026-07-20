@@ -9,12 +9,14 @@ Verified on 2026-07-19 in the isolated `fix/sw-precache-reload` worktree. Task 6
 - Baseline `npm test` before edits: 32 tests passed, 0 failed.
 - RED `node --test tests/sw.test.js tests/release.test.js`: exited 1 with 11 tests passed and 2 expected failures because the worker still opened `tenline-v2`.
 - GREEN `node --test tests/sw.test.js tests/release.test.js`: 13 tests passed, 0 failed.
-- `npm test`: 33 tests passed, 0 failed.
+- Task 8 RED `node --test tests/sw.test.js`: exited 1 with the install test passing and the activation test failing because `other-pwa-cache` was also deleted.
+- Task 8 GREEN `node --test tests/sw.test.js`: 2 tests passed, 0 failed.
+- `npm test`: 34 tests passed, 0 failed.
 - `node --check sw.js`: passed.
 - `git diff --check`: passed.
 - `bash scripts/make-release.sh`: rebuilt the offline ZIP and its integrated `unzip -t` reported no compressed-data errors.
 - Packaged-worker inspection found `const CACHE_NAME = 'tenline-v3';` and `cache: 'reload'` in `dist/tenline-offline.zip`.
-- Release ZIP: 20,121 bytes; SHA-256 `7bb90a04dc89471c42f512d8fbc639c58335028bbfa10210e7ad0e5771d29ecf`.
+- Release ZIP: 20,146 bytes; SHA-256 `d89d63d7183f80304e35ad1fa0c818aab87f51f4843fe4a9d2ce491e290d6c7c`.
 
 ### Retained-profile migration and offline checks
 

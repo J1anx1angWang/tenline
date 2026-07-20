@@ -1,6 +1,7 @@
 'use strict';
 
 const CACHE_NAME = 'tenline-v3';
+const LEGACY_CACHE_NAMES = ['tenline-v1', 'tenline-v2'];
 const ASSETS = [
   './',
   './index.html',
@@ -35,7 +36,7 @@ self.addEventListener('activate', (event) => {
     caches.keys()
       .then((keys) => Promise.all(
         keys
-          .filter((key) => key !== CACHE_NAME)
+          .filter((key) => LEGACY_CACHE_NAMES.includes(key))
           .map((key) => caches.delete(key))
       ))
       .then(() => self.clients.claim())
